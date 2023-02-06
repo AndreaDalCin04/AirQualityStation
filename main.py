@@ -97,11 +97,11 @@ while True:
     try:
         # Create connection to Database
         mydb = mysql.connector.connect(
-            user="u487620786_aqs",
-            password="cbITT143+",
-            host="194.5.156.94",
+            user="",
+            password="+",
+            host="",
             port=3306,
-            database="u487620786_aqs"
+            database=""
         )
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
