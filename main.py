@@ -11,6 +11,7 @@ import datetime
 import pytz
 import time
 import math as m
+from Noise import Noise
 
     
 try:
@@ -34,6 +35,12 @@ bme280 = BME280(i2c_dev=bus)
 # Create PMS5003 instance
 pms5003 = PMS5003()
 
+# Set up sound settings
+spl_ref_level = 0.000001 # Sets quiet level reference baseline for dB(A) measurements. alsamixer at 10
+spl_thresholds = (70, 90)
+log_sound_data = True # Set to True to log sound data for debugging
+debug_recording_capture = False # Set to True for plotting each recording stream sample
+#Noise object must be instanciated in the loop
 
 #Antoinconstants for Water to calculate vapor pressure or boiling temperature
 AntA=18.88579
@@ -51,6 +58,8 @@ def tboil(pres):
 def read_values():
     # Create array for contains values
     values = {}
+    noise = Noise(spl_ref_level, log_sound_data, debug_recording_capture)
+
     # Get cpu temperature and external temperature
     cpu_temp = get_cpu_temperature()
     raw_temp = bme280.get_temperature()
@@ -67,6 +76,7 @@ def read_values():
     values["Reducing"] = gas.read_reducing()
     values["Oxidising"] = gas.read_oxidising()
     values["NH3"] = gas.read_nh3()
+    values["dBA"] = int(noise.spl())
     try:
         # Get supported pollution type values
         pm_values = pms5003.read()
@@ -97,11 +107,11 @@ while True:
     try:
         # Create connection to Database
         mydb = mysql.connector.connect(
-            user="",
-            password="+",
-            host="",
+            user="root",
+            password="",
+            host="192.168.31.14",
             port=3306,
-            database=""
+            database="AQS"
         )
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
@@ -119,8 +129,8 @@ while True:
         formatted_date = now.strftime('%Y-%m-%d %H')
         logging.info(values)
         # Create the query for the database 
-        sql = "INSERT INTO readings (date_time, pm1, pm25, pm10, temperature, humidity, air_pressure, no2, co, nh3) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        val = (formatted_date, values['PM1'], values['PM25'], values['PM10'], values['temperature'], values['humidity'], values['air_pressure'], values['Oxidising'], values['Reducing'], values['NH3'])
+        sql = "INSERT INTO readings (date_time, pm1, pm25, pm10, temperature, humidity, air_pressure, no2, co, nh3, dBA) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        val = (formatted_date, values['PM1'], values['PM25'], values['PM10'], values['temperature'], values['humidity'], values['air_pressure'], values['Oxidising'], values['Reducing'], values['NH3'], values['dBA'])
         # Execute the SQL query
         mycursor.execute(sql, val)
         #Confirm the changes in the dataabse are made correctly
@@ -131,4 +141,4 @@ while True:
     mycursor.close()
     mydb.close()
     # Wait the time for the next detection
-    time.sleep(60)
+    time.sleep(10)
