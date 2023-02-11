@@ -161,28 +161,28 @@ def read_values():
     try:
 
         # Get supported pollution type values
+        
+        pm_values = pms5003.read()
 
-        #pm_values = pms5003.read()
+        values["PM1"] = int(pm_values.pm_ug_per_m3(1))
 
-        values["PM1"] = 99
-
-        values["PM25"] = 99
-
-        values["PM10"] = 99
+        values["PM25"] = int(pm_values.pm_ug_per_m3(2.5))
+        
+        values["PM10"] = int(pm_values.pm_ug_per_m3(10))
 
     except(ReadTimeoutError, ChecksumMismatchError):
 
-        #logging.info("Failed to read PMS5003. Reseting and retrying.")
+        logging.info("Failed to read PMS5003. Reseting and retrying.")
 
-        #pms5003.reset()
+        pms5003.reset()
 
-        #pm_values = pms5003.read()
+        pm_values = pms5003.read()
 
-        values["PM1"] = 99
+        values["PM1"] = int(pm_values.pm_ug_per_m3(1))
 
-        values["PM25"] = 99
-
-        values["PM10"] = 99
+        values["PM25"] = int(pm_values.pm_ug_per_m3(2.5))
+        
+        values["PM10"] = int(pm_values.pm_ug_per_m3(10))
 
     return values
 
