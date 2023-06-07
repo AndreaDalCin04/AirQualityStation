@@ -69,7 +69,7 @@ def read_values():
     raw_temp = bme280.get_temperature()
     # Get the correct temperature adjusting raw temperature with the CPU temperature
     comp_temp = raw_temp - ((cpu_temp - raw_temp) /comp_factor)
-    raw_humid = bme280.get_humidity(
+    raw_humid = bme280.get_humidity()
     dew_point = tboil(raw_humid / 100 * pvap(raw_temp)) # humid is in %, devide by 100 to get factor 
     # Humidity correction 
     humidity = raw_humid * pvap(raw_temp) / pvap(comp_temp)
@@ -82,18 +82,26 @@ def read_values():
     values["NH3"] = gas.read_nh3()
     values["dBA"] = int(noise.spl())
     try:
+        #valori random per testare quando non è collegato il rilevatore di pm
+
         # Get supported pollution type values
-        pm_values = pms5003.read()
-        values["PM1"] = int(pm_values.pm_ug_per_m3(1))
-        values["PM25"] = int(pm_values.pm_ug_per_m3(2.5))
-        values["PM10"] = int(pm_values.pm_ug_per_m3(10))
+        #pm_values = pms5003.read()
+        #values["PM1"] = int(pm_values.pm_ug_per_m3(1))
+        values["PM1"] = 1
+        #values["PM25"] = int(pm_values.pm_ug_per_m3(2.5))
+        values["PM25"] = 25
+        #values["PM10"] = int(pm_values.pm_ug_per_m3(10))
+        values["PM10"] = 10
     except(ReadTimeoutError, ChecksumMismatchError):
-        logging.info("Failed to read PMS5003. Reseting and retrying.")
-        pms5003.reset()
-        pm_values = pms5003.read()
-        values["PM1"] = int(pm_values.pm_ug_per_m3(1))
-        values["PM25"] = int(pm_values.pm_ug_per_m3(2.5))
-        values["PM10"] = int(pm_values.pm_ug_per_m3(10))
+        values["PM1"] = 1
+        values["PM25"] = 25
+        values["PM10"] = 10
+        #logging.info("Failed to read PMS5003. Reseting and retrying.")
+        #pms5003.reset()
+        #pm_values = pms5003.read()
+        #values["PM1"] = int(pm_values.pm_ug_per_m3(1))
+        #values["PM25"] = int(pm_values.pm_ug_per_m3(2.5))
+        #values["PM10"] = int(pm_values.pm_ug_per_m3(10))
     return values
 
 
@@ -112,11 +120,11 @@ while True:
     try:
         # Create connection to Database
         mydb = mysql.connector.connect(
-            user="station",
-            password="root",
-            host="192.168.31.14",
+            user="MS12486_aqs",
+            password="Arianetta!_23",
+            host="hostingmysql310.register.it",
             port=3306,
-            database="aqs",
+            database="airqualitystation",
             #use_pure=True
         )
         
@@ -137,8 +145,8 @@ while True:
         formatted_date = now.strftime('%Y-%m-%d %H:%M:%S')
         logging.info(values)
         # Create the query for the database 
-        sql = "INSERT INTO readings (date_time, pm1, pm25, pm10, temperature, humidity, air_pressure, no2, co, nh3, dBA) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        val = (formatted_date, values['PM1'], values['PM25'], values['PM10'], values['temperature'], values['humidity'], values['air_pressure'], values['Oxidising'], values['Reducing'], values['NH3'], values['dBA'])
+        sql = "INSERT INTO readings (date_time, pm1, pm25, pm10, temperature, humidity, air_pressure, no2, co, nh3, dBA, luogo) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        val = (formatted_date, values['PM1'], values['PM25'], values['PM10'], values['temperature'], values['humidity'], values['air_pressure'], values['Oxidising'], values['Reducing'], values['NH3'], values['dBA'], "ITT Città della Vittoria")
         # Execute the SQL query
         mycursor.execute(sql, val)
         #Confirm the changes in the dataabse are made correctly
